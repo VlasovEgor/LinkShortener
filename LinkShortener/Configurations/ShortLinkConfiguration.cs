@@ -1,0 +1,17 @@
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace LinkShortener.Configurations;
+
+public class ShortLinkConfiguration: IEntityTypeConfiguration<ShortLink>
+{
+    public void Configure(EntityTypeBuilder<ShortLink> builder)
+    {
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Code).IsRequired().HasMaxLength(7);
+        builder.HasIndex(x => x.Code).IsUnique();
+        builder.Property(x => x.OriginalUrl).IsRequired();
+        builder.Property(x => x.ClickCount).IsRequired();
+        builder.Property(x => x.CreatedAtUtc).IsRequired();
+    }
+}
