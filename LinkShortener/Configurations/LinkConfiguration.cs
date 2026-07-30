@@ -3,9 +3,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace LinkShortener.Configurations;
 
-public class ShortLinkConfiguration: IEntityTypeConfiguration<ShortLink>
+public class LinkConfiguration: IEntityTypeConfiguration<Link>
 {
-    public void Configure(EntityTypeBuilder<ShortLink> builder)
+    public void Configure(EntityTypeBuilder<Link> builder)
     {
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Code).IsRequired().HasMaxLength(7);

@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+﻿using LinkShortener.Repositories;
 
 namespace LinkShortener.Services;
 
@@ -6,41 +6,35 @@ public class LinksService
 {   
     private const int NUMBER_GENERATION_ATTEMPTS = 10;
     
-    private readonly ConcurrentDictionary<string, string> _links = new();
     private readonly ICodeGenerator _generator;
+    private readonly LinksRepository _repository;
 
-    public LinksService(ICodeGenerator generator)
+    public LinksService(ICodeGenerator generator, LinksRepository linksRepository)
     {
         _generator = generator;
+        _repository = linksRepository;
     }
 
-    public bool TryCreateLink(string originalUrl, CancellationToken cancellationToken,
-        out string code, out GenerateStatus result)
+    public async Task<LinkServiceResponse> TryCreateLink(string originalUrl, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        
+
         if (IsValidUrl(originalUrl) == false)
-        {
-            code = null;
-            result = GenerateStatus.InvalidUrl;
-            return false;
-        }
-             
+            return new LinkServiceResponse(GenerateStatus.InvalidUrl, null);
+
         for (int i = 0; i < NUMBER_GENERATION_ATTEMPTS; i++)
-        {   
+        {
             cancellationToken.ThrowIfCancellationRequested();
-            
-            code = _generator.Generate();
-            if (_links.TryAdd(code, originalUrl))
-            {
-                result = GenerateStatus.Success;
-                return true;
-            }
+
+            string code = _generator.Generate();
+
+            bool linkAdded = await _repository.TryAddAsync(code, originalUrl, cancellationToken);
+
+            if (linkAdded)
+                return new LinkServiceResponse(GenerateStatus.Success, code);
         }
-        
-        code = null;
-        result = GenerateStatus.GenerationFailed;
-        return false;
+
+        return new LinkServiceResponse(GenerateStatus.GenerationFailed, null);
     }
 
     private bool IsValidUrl(string originalUrl)
@@ -54,14 +48,25 @@ public class LinksService
        return true;
     }
 
-    public bool TryGetLink(string code, out string originalUrl)
+    public async Task<string?> TryGetLink(string code, CancellationToken cancellationToken)
     {
-        return _links.TryGetValue(code, out originalUrl!);
+         return await _repository.GetOriginalLinkByCodeAsync(code, cancellationToken);
     }
     
-    public bool DeleteLink(string code)
+    public async Task<Link?> TryGetStatistics(string code, CancellationToken cancellationToken)
     {
-        return _links.TryRemove(code, out _);
+        Link? statistics = await _repository.GetStatisticsByCodeAsync(code, cancellationToken);
+        return statistics;
+    }
+    
+    public async Task<bool> DeleteLink(string code, CancellationToken cancellationToken)
+    {   
+        return await _repository.DeleteAsync(code,cancellationToken);
+    }
+
+    public async Task IncreaseClickCount(string code, CancellationToken cancellationToken)
+    {
+       await _repository.IncreaseClickCount(code, cancellationToken);
     }
 }
 
@@ -71,4 +76,16 @@ public enum GenerateStatus
     Success = 1,
     InvalidUrl = 2,
     GenerationFailed = 3
+}
+
+public struct LinkServiceResponse
+{
+    public readonly GenerateStatus Status;
+    public readonly string? Code;
+
+    public LinkServiceResponse(GenerateStatus status, string? code)
+    {
+        Status = status;
+        Code = code;
+    }
 }

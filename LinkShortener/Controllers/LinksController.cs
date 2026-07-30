@@ -13,54 +13,50 @@ public class LinksController : ControllerBase
     {
         _linksService = linksService;    
     }
-    
+
     [HttpPost]
-    public IActionResult Post(CreateLinkRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Post(CreateLinkRequest request, CancellationToken cancellationToken)
     {
-        if (!_linksService.TryCreateLink(request.Url, cancellationToken, out string code, out GenerateStatus result))
-        {
-            switch (result)
-            {
-                case GenerateStatus.InvalidUrl:
-                    return BadRequest();
-                case GenerateStatus.GenerationFailed:
-                    return Problem();
-            }
-            
-            return Problem();
-        }
+        LinkServiceResponse createTask = await _linksService.TryCreateLink(request.Url, cancellationToken);
         
-        Console.WriteLine(code);
-        return Created();
+        switch (createTask.Status)
+        {   
+            case GenerateStatus.Success:
+                return Created();
+            case GenerateStatus.InvalidUrl:
+                return BadRequest();
+            case GenerateStatus.GenerationFailed:
+                return Problem();
+        }
+
+        return Problem();
     }
 
     [HttpGet("{code}")]
-    public IActionResult GetStatistic(string code)
-    {
-        Console.WriteLine(code);
-        Console.WriteLine(DateTime.Now);
-        return Ok();
+    public async Task<IActionResult> GetStatistic(string code, CancellationToken cancellationToken)
+    {   
+        Link? statistics = await _linksService.TryGetStatistics(code, cancellationToken);
+        if(statistics == null)
+            return NotFound();
+        
+        return Ok(statistics);
     }
 
     [HttpGet("/{code}")]
-    public IActionResult Get(string code)
+    public async Task<IActionResult> Get(string code, CancellationToken cancellationToken)
     {
-        Console.WriteLine("code: " + code);
-        
-        if(!_linksService.TryGetLink(code, out string originalUrl))
-        {
+        string? link = await _linksService.TryGetLink(code, cancellationToken);
+        if(string.IsNullOrEmpty(link))
             return NotFound();
-        }
-        Console.WriteLine("originalUrl:  " + originalUrl);
-        return Redirect(originalUrl);
+
+        await _linksService.IncreaseClickCount(code, cancellationToken);
+        return Redirect(link);
     }
 
     [HttpDelete("{code}")]
-    public IActionResult Delete(string code)
-    {
-        if (_linksService.DeleteLink(code))
-            return NoContent();
-        
-        return NotFound();
+    public async Task<IActionResult> Delete(string code, CancellationToken cancellationToken)
+    {   
+        bool hasDeleted = await _linksService.DeleteLink(code, cancellationToken);
+        return hasDeleted ? NoContent() : NotFound();
     }
 }
