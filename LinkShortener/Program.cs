@@ -2,6 +2,7 @@ using LinkShortener;
 using LinkShortener.Repositories;
 using LinkShortener.Services;
 using Microsoft.EntityFrameworkCore;
+using LRU_Cache;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,7 +23,10 @@ builder.Services.AddScoped<LinksRepository>();
 
 builder.Services.AddScoped<LinksService>();
 builder.Services.AddSingleton<ICodeGenerator, CodeGenerator>();
+builder.Services.AddSingleton<IClock, Clock>();
 
+var cache = new LruCache<string, string>(capacity: 100, TimeSpan.FromMinutes(10));
+builder.Services.AddSingleton(cache);
 
 var app = builder.Build();
 

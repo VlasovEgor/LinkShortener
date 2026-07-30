@@ -6,10 +6,12 @@ namespace LinkShortener.Repositories;
 public class LinksRepository
 {
     private readonly LinkDbContext _dbContext;
+    private readonly IClock _clock;
     
-    public LinksRepository(LinkDbContext dbContext)
+    public LinksRepository(LinkDbContext dbContext, IClock clock)
     {
         _dbContext = dbContext;
+        _clock = clock;
     }
 
     public async Task<Link?> GetStatisticsByCodeAsync(string code, CancellationToken cancellationToken)
@@ -27,15 +29,25 @@ public class LinksRepository
 
         return linkStatistics?.OriginalUrl;
     }
+    
+    public async Task<string?> GetCodeByIdempotencyKeyAsync(string? idempotencyKey, CancellationToken cancellationToken)
+    {
+        Link? linkStatistics = await _dbContext.ShortLinks
+            .AsNoTracking()
+            .FirstOrDefaultAsync(link => link.IdempotencyKey == idempotencyKey, cancellationToken);
 
-    public async Task<bool> TryAddAsync(string shortCode, string url, CancellationToken cancellationToken)
+        return linkStatistics?.Code;
+    }
+
+    public async Task<bool> TryAddAsync(string shortCode, string originalUrl, string? idempotencyKey, CancellationToken cancellationToken)
     {   
         Link link = new Link
         {
             Id = Guid.NewGuid(),
             Code = shortCode,
-            OriginalUrl = url,
-            CreatedAtUtc = DateTimeOffset.UtcNow,
+            OriginalUrl = originalUrl,
+            IdempotencyKey = idempotencyKey,
+            CreatedAtUtc = _clock.GetUtsNow(),
             ClickCount = 0
         };
         

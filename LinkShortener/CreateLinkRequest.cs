@@ -2,11 +2,5 @@
 
 public class CreateLinkRequest
 {
-    public CreateLinkRequest(string url)
-    {
-        Url = url;
-    }
-
-    public string Url { get; }
-    
+    public string Url { get; init; } = string.Empty;
 }

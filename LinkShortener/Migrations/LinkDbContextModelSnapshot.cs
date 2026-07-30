@@ -17,7 +17,7 @@ namespace LinkShortener.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.29");
 
-            modelBuilder.Entity("LinkShortener.ShortLink", b =>
+            modelBuilder.Entity("LinkShortener.Link", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -34,6 +34,9 @@ namespace LinkShortener.Migrations
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("IdempotencyKey")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("OriginalUrl")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -41,6 +44,9 @@ namespace LinkShortener.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("IdempotencyKey")
                         .IsUnique();
 
                     b.ToTable("ShortLinks");

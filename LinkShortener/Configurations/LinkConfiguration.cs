@@ -10,6 +10,7 @@ public class LinkConfiguration: IEntityTypeConfiguration<Link>
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Code).IsRequired().HasMaxLength(7);
         builder.HasIndex(x => x.Code).IsUnique();
+        builder.HasIndex(x => x.IdempotencyKey).IsUnique();
         builder.Property(x => x.OriginalUrl).IsRequired();
         builder.Property(x => x.ClickCount).IsRequired();
         builder.Property(x => x.CreatedAtUtc).IsRequired();

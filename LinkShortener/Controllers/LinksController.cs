@@ -15,18 +15,26 @@ public class LinksController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Post(CreateLinkRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Post([FromHeader(Name = "Idempotency-Key")] string? idempotencyKey, CreateLinkRequest request, CancellationToken cancellationToken)
     {
-        LinkServiceResponse createTask = await _linksService.TryCreateLink(request.Url, cancellationToken);
+        LinkServiceResponse createTask = await _linksService.TryCreateLink(request.Url, idempotencyKey, cancellationToken);
         
         switch (createTask.Status)
         {   
             case GenerateStatus.Success:
-                return Created();
+                return Created($"api/links/{createTask.Code}", createTask);
             case GenerateStatus.InvalidUrl:
-                return BadRequest();
+                return Problem(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    title: "Invalid URL",
+                    detail: "The URL must be absolute and use the HTTP or HTTPS scheme.");
             case GenerateStatus.GenerationFailed:
-                return Problem();
+                return Problem(
+                    statusCode: StatusCodes.Status500InternalServerError,
+                    title: "Code generation failed",
+                    detail: "A unique short code could not be generated. Please try again later.");
+            case GenerateStatus.Returned:
+                return Ok(createTask);
         }
 
         return Problem();
@@ -36,8 +44,13 @@ public class LinksController : ControllerBase
     public async Task<IActionResult> GetStatistic(string code, CancellationToken cancellationToken)
     {   
         Link? statistics = await _linksService.TryGetStatistics(code, cancellationToken);
-        if(statistics == null)
-            return NotFound();
+        if (statistics == null)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                title: "Link not found",
+                detail: $"No link with code '{code}' was found.");
+        }
         
         return Ok(statistics);
     }
@@ -46,8 +59,13 @@ public class LinksController : ControllerBase
     public async Task<IActionResult> Get(string code, CancellationToken cancellationToken)
     {
         string? link = await _linksService.TryGetLink(code, cancellationToken);
-        if(string.IsNullOrEmpty(link))
-            return NotFound();
+        if (string.IsNullOrEmpty(link))
+        {
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                title: "Link not found",
+                detail: $"No link with code '{code}' was found.");
+        }
 
         await _linksService.IncreaseClickCount(code, cancellationToken);
         return Redirect(link);
@@ -57,6 +75,14 @@ public class LinksController : ControllerBase
     public async Task<IActionResult> Delete(string code, CancellationToken cancellationToken)
     {   
         bool hasDeleted = await _linksService.DeleteLink(code, cancellationToken);
-        return hasDeleted ? NoContent() : NotFound();
+        if (!hasDeleted)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                title: "Link not found",
+                detail: $"No link with code '{code}' was found.");
+        }
+
+        return NoContent();
     }
 }
