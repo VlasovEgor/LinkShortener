@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinkShortener", "LinkShorte
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LRU-Cache", "..\dotnet-practice\Block01\LRU-Cache\LRU-Cache.csproj", "{D2C1603C-1CC0-4374-9DE7-070B7C8A52E4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Linkshortener.tests", "Linkshortener.tests\Linkshortener.tests\Linkshortener.tests.csproj", "{E41D1CBE-BB6C-42AC-9F76-C7F6E901D7DC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{D2C1603C-1CC0-4374-9DE7-070B7C8A52E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D2C1603C-1CC0-4374-9DE7-070B7C8A52E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D2C1603C-1CC0-4374-9DE7-070B7C8A52E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E41D1CBE-BB6C-42AC-9F76-C7F6E901D7DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E41D1CBE-BB6C-42AC-9F76-C7F6E901D7DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E41D1CBE-BB6C-42AC-9F76-C7F6E901D7DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E41D1CBE-BB6C-42AC-9F76-C7F6E901D7DC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
